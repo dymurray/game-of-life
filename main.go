@@ -6,6 +6,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"strings"
@@ -95,7 +96,18 @@ func (g grid) render(w *os.File) {
 	w.WriteString(b.String())
 }
 
+func showSplash() {
+	fmt.Print("\033[H\033[2J") // clear
+	fmt.Println("   Conway's Game of Life")
+	fmt.Println()
+	fmt.Println("   A zero-player cellular automaton.")
+	fmt.Println("   Starting simulation...")
+	time.Sleep(1500 * time.Millisecond)
+}
+
 func main() {
+	showSplash()
+
 	g := newGrid()
 	g.seed()
 
