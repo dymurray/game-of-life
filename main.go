@@ -6,6 +6,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
 	"os"
@@ -13,12 +14,34 @@ import (
 	"time"
 )
 
-const (
-	width     = 60                     // number of columns
-	height    = 30                     // number of rows
-	liveChars = 0.25                   // initial fraction of live cells
-	frameRate = 100 * time.Millisecond // delay between generations
+var (
+	width     int
+	height    int
+	liveChars float64
+	frameRate time.Duration
 )
+
+func init() {
+	flag.IntVar(&width, "width", 60, "number of columns")
+	flag.IntVar(&height, "height", 30, "number of rows")
+	flag.Float64Var(&liveChars, "density", 0.25, "initial fraction of live cells")
+	flag.DurationVar(&frameRate, "rate", 100*time.Millisecond, "delay between generations")
+}
+
+func validate() {
+	if width <= 0 || height <= 0 {
+		fmt.Fprintln(os.Stderr, "error: width and height must be positive")
+		os.Exit(1)
+	}
+	if liveChars < 0 || liveChars > 1 {
+		fmt.Fprintln(os.Stderr, "error: density must be between 0 and 1")
+		os.Exit(1)
+	}
+	if frameRate <= 0 {
+		fmt.Fprintln(os.Stderr, "error: rate must be positive")
+		os.Exit(1)
+	}
+}
 
 // grid holds the state of every cell: true means alive.
 type grid [][]bool
@@ -106,6 +129,8 @@ func showSplash() {
 }
 
 func main() {
+	flag.Parse()
+	validate()
 	showSplash()
 
 	g := newGrid()
