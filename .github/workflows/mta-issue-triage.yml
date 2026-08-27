@@ -1,0 +1,84 @@
+name: MTA issue triage
+
+# When a new issue is opened, kick off a Konveyor/MTA agent workflow run that
+# triages the issue and (should_fix=true) attempts a fix, commits it, pushes a
+# branch, and comments back on the issue.
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+# One triage run per issue at a time.
+concurrency:
+  group: mta-triage-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+env:
+  # Konveyor/MTA inventory application ID for this repository (game-of-life).
+  MTA_APP_ID: "11"
+  MTA_NAMESPACE: konveyor-tackle
+  MTA_WORKFLOW: github-issue-triage
+  MTA_GATEWAY: grok
+  # In-cluster Hub service (the harness runs inside the cluster).
+  MTA_HUB_BASE_URL: http://tackle-hub.konveyor-tackle.svc:8080
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Create AgentWorkflowRun
+        env:
+          MTA_API_URL: ${{ secrets.MTA_API_URL }}
+          MTA_SA_TOKEN: ${{ secrets.MTA_SA_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          cat > run.yaml <<EOF
+          apiVersion: konveyor.io/v1alpha1
+          kind: AgentWorkflowRun
+          metadata:
+            generateName: gh-triage-
+            namespace: ${MTA_NAMESPACE}
+          spec:
+            workflowRef: ${MTA_WORKFLOW}
+            gateway: ${MTA_GATEWAY}
+            params:
+              - name: issue
+                value: "${ISSUE_NUMBER}"
+              - name: should_fix
+                value: "true"
+            env:
+              - name: HUB_BASE_URL
+                value: ${MTA_HUB_BASE_URL}
+              - name: APP_ID
+                value: "${MTA_APP_ID}"
+              - name: TARGET_BRANCH
+                value: konveyor/triage-${ISSUE_NUMBER}
+            envFrom:
+              - secretRef:
+                  name: github-credentials
+          EOF
+          echo "Submitting AgentWorkflowRun:"
+          cat run.yaml
+          RUN_NAME=$(kubectl \
+            --server="${MTA_API_URL}" \
+            --token="${MTA_SA_TOKEN}" \
+            --insecure-skip-tls-verify=true \
+            -n "${MTA_NAMESPACE}" \
+            create -f run.yaml -o name)
+          echo "Created ${RUN_NAME}"
+          echo "run_name=${RUN_NAME}" >> "$GITHUB_OUTPUT"
+        id: create_run
+
+      - name: Comment on issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "🤖 Started an MTA agent triage run (\`${{ steps.create_run.outputs.run_name }}\`) with auto-fix enabled. The agent will comment here with its findings, and open a branch if it produces a fix."
