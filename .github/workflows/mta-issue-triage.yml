@@ -70,7 +70,7 @@ jobs:
             --token="${MTA_SA_TOKEN}" \
             --insecure-skip-tls-verify=true \
             -n "${MTA_NAMESPACE}" \
-            create -f run.yaml -o name)
+            create -f run.yaml -o name --validate=false)
           echo "Created ${RUN_NAME}"
           echo "run_name=${RUN_NAME}" >> "$GITHUB_OUTPUT"
         id: create_run
