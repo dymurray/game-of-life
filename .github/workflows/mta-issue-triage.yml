@@ -38,6 +38,26 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           set -euo pipefail
+          if [ -z "${MTA_API_URL:-}" ]; then
+            echo "::error::MTA_API_URL repo secret is empty or unset."
+            exit 1
+          fi
+          if [ -z "${MTA_SA_TOKEN:-}" ]; then
+            echo "::error::MTA_SA_TOKEN repo secret is empty or unset."
+            exit 1
+          fi
+          # Strip any stray whitespace/newlines a copy-paste may have added.
+          MTA_SA_TOKEN="$(printf '%s' "${MTA_SA_TOKEN}" | tr -d '[:space:]')"
+          echo "Preflight: verifying cluster auth as the ServiceAccount..."
+          if ! kubectl \
+            --server="${MTA_API_URL}" \
+            --token="${MTA_SA_TOKEN}" \
+            --insecure-skip-tls-verify=true \
+            -n "${MTA_NAMESPACE}" \
+            auth can-i create agentworkflowruns.konveyor.io >/dev/null 2>&1; then
+            echo "::error::Cannot authenticate to the cluster API. Check that the MTA_SA_TOKEN secret holds the full ServiceAccount token and MTA_API_URL points at the API server."
+            exit 1
+          fi
           cat > run.yaml <<EOF
           apiVersion: konveyor.io/v1alpha1
           kind: AgentWorkflowRun
