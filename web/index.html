@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conway's Game of Life</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <header>
+    <h1>Conway's Game of Life</h1>
+    <div class="stats" aria-live="polite">
+      <span>Generation <strong id="generation">0</strong></span>
+      <span>Population <strong id="population">0</strong></span>
+      <span>Board <strong id="dims">–</strong></span>
+      <span id="conn" class="conn offline" title="Connection to server">offline</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="board-wrap">
+      <canvas id="board" aria-label="Game board. Click or drag to toggle cells." tabindex="0"></canvas>
+      <p class="hint" id="hint">Click or drag on the board to draw cells.</p>
+    </section>
+
+    <aside class="controls">
+      <fieldset>
+        <legend>Simulation</legend>
+        <div class="row">
+          <button id="play" class="primary" title="Play / pause (Space)">▶ Play</button>
+          <button id="step" title="Advance one generation (N)">Step</button>
+        </div>
+        <div class="row">
+          <button id="step10" title="Advance 10 generations">+10</button>
+          <button id="step100" title="Advance 100 generations">+100</button>
+        </div>
+        <label for="speed">Speed: <output id="speedOut">100 ms</output></label>
+        <input id="speed" type="range" min="10" max="1000" step="10" value="100">
+      </fieldset>
+
+      <fieldset>
+        <legend>Board</legend>
+        <div class="row">
+          <button id="random" title="Randomize (R)">Randomize</button>
+          <button id="clear" class="danger" title="Clear (C)">Clear</button>
+        </div>
+        <label for="density">Random density: <output id="densityOut">25%</output></label>
+        <input id="density" type="range" min="5" max="80" step="5" value="25">
+        <div class="row size">
+          <label>W <input id="width" type="number" min="5" max="200" value="60"></label>
+          <label>H <input id="height" type="number" min="5" max="200" value="30"></label>
+          <button id="resize">Resize</button>
+        </div>
+        <label class="check"><input id="gridlines" type="checkbox" checked> Show grid lines</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Patterns</legend>
+        <select id="pattern" aria-label="Pattern"></select>
+        <div class="row">
+          <button id="placeCenter" title="Clear the board and put the pattern in the middle">Load centered</button>
+          <button id="placeClick" title="Click the board to stamp the pattern">Stamp…</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Import / export</legend>
+        <textarea id="io" rows="5" spellcheck="false" placeholder="Rows of # (alive) and . (dead)"></textarea>
+        <div class="row">
+          <button id="export">Export</button>
+          <button id="import">Import</button>
+        </div>
+      </fieldset>
+
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <details>
+        <summary>Keyboard shortcuts</summary>
+        <ul class="keys">
+          <li><kbd>Space</kbd> play / pause</li>
+          <li><kbd>N</kbd> step</li>
+          <li><kbd>R</kbd> randomize</li>
+          <li><kbd>C</kbd> clear</li>
+          <li><kbd>Esc</kbd> cancel stamping</li>
+        </ul>
+      </details>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
